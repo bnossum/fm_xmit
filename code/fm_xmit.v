@@ -30,6 +30,16 @@
  * The transmit effect is by purpose set very low. To increase, output
  * to a pin that is connected to a wire.
  * 
+ * 
+ * TODO.
+ * There is no reason to go to a 32-bit phase accumulator, we only need
+ * to distinguish roughly between the center frequency and a sideband.
+ * As (108000000+7500)/108000000 * 2^12 = 0x1004 even around a 16-bit phase
+ * accumulator should do. Then the number of FFs driven is so small that
+ * there is no need for a global clock buffer, so I can move to a higher
+ * frequency. It will then be a point *not* to buffer the msb in the IOcell.
+ * 
+ * 
  * Note to self: The following parameters give a short phase accumulator, the 
  * Lattice LSE syntethizer does not allow real paramters (at least not in this 
  * example? Miswrites a float as integer in edf file).
@@ -189,7 +199,7 @@ endmodule
  * Note to self: 
  * Global clock netwirks are specified to work to up to 275 MHz.
  * Pulsewidth for the global buffer is specified at 0.88 ns, which
- * cpi;d imply that the highest clock that can pass the buffer
+ * could imply that the highest clock that can pass the buffer
  * (but not drive the whole network) can be 1/(2*0.88 ns) = 568 MHz.
  * I will be nice, and uses 6 taps. On my board this give a 274 MHz clock,
  * but this will vary according to temperature, voltage, and die.
