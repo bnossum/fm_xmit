@@ -1,14 +1,16 @@
 # ##############################################################################
-# Modified from:
-# iCEcube PCF
-# Version:            2017.08.27940
-# File Generated:     Sep 22 2019 01:54:06
-# Family & Device:    iCE40HX1K
-# Package:            VQ100
-# ##############################################################################
 
-###PhyInst List 1
-set_location gbbuf 13 8
+# iCEcube PCF
+
+# Version:            2017.08.27940
+
+# File Generated:     Sep 22 2019 14:01:33
+
+# Family & Device:    iCE40HX1K
+
+# Package:            VQ100
+
+# ##############################################################################
 
 ###BLE List 6
 ble_pack T_12_8_logic_cluster_lc_0 {instclk.cmb_tap0} -no_pin_permute
@@ -21,6 +23,9 @@ ble_pack T_12_8_logic_cluster_lc_5 {instclk.cmb_tap5} -no_pin_permute
 ###CLB List 1
 clb_pack T_12_8 {T_12_8_logic_cluster_lc_0,T_12_8_logic_cluster_lc_1,T_12_8_logic_cluster_lc_2,T_12_8_logic_cluster_lc_3,T_12_8_logic_cluster_lc_4,T_12_8_logic_cluster_lc_5,,}
 set_location T_12_8 12 8
+
+###PhyInst List 1
+set_location instclk.gbbuf 13 8
 
 ###MergeFF List 1
 set_io_ff led[2] -out ON

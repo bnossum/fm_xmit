@@ -1,7 +1,8 @@
 /* Morse "HELLO WORLD" on FM.
  * For iCEblink40hx1k development board.
  * 
- * See http://hamsterworks.co.nz/mediawiki/index.php/FM_SOS for original project.
+ * See http://hamsterworks.co.nz/mediawiki/index.php/FM_SOS for original 
+ * project.
  * This implementation inspired by https://github.com/r4d10n/iCEstick-hacks, 
  * that breaks timing constraints, and also requires a PLL.
  * 
@@ -9,19 +10,29 @@
  * 
  * User guide:
  * -----------
- * 1. When synthesizing with Lattice ICECube2 - ensure "auto LUT cascade" is off. This is needed to realize 
- *    the freerunning clock. See placement file top.pcf.
- * 2. Check the frequency of your freerunning clock on your iceblink40hx1k board. Set parameter TIMING to 1.
- *    After programming the card, observe led2. After around 8 s it should light, and will stay on for
- *    around 8 s. Time this, and calculate the CLKFRQ. For my board, the led is high for 7.84 s, so
- *    apperantly CLKFRQ ~= 2^31/7.84 = 274 MHz. If your calculation is widely off this value, examine 
- *    placement of the instance of m_freeclock.
- * 3. Select the FM center frequency (CENTER) and what translates into volume (BAND). 
- * 4. Compile with ICECube2, upload to board, select board main frequency 3.33 MHz (JP2 open).
- * 4. Tune in your radio at approximately CENTER, and you should hear the message in morse.
+ * 1. When synthesizing with Lattice ICECube2 - ensure "auto LUT cascade" is 
+ *    off. This is needed to realize the freerunning clock. See placement file 
+ *    top.pcf.
+ * 2. Check the frequency of your freerunning clock on your iceblink40hx1k 
+ *    board. Set parameter TIMING to 1. After programming the card, observe 
+ *    led2. After around 8 s it should light, and will stay on for around 8 s. 
+ *    Time this, and calculate the CLKFRQ. For my board, the led is high for 
+ *    7.84 s, so apperantly CLKFRQ ~= 2^31/7.84 = 274 MHz. If your calculation 
+ *    is widely off this value, examine placement of the instance of 
+ *    m_freeclock.
+ * 3. Select the FM center frequency (CENTER) and what translates into 
+ *    volume (BAND). 
+ * 4. Compile with ICECube2, upload to board, select board main frequency 
+ *    3.33 MHz (JP2 open).
+ * 4. Tune in your radio at approximately CENTER, and you should hear the 
+ *    message in Morse.
  * 
- * Note to self: The following parameters give a short phase accumulator, the Lattice LSE syntethizer does
- * not allow real paramters (at least not in this example? Miswrites a float as integer in edf file).
+ * The transmit effect is by purpose set very low. To increase, output
+ * to a pin that is connected to a wire.
+ * 
+ * Note to self: The following parameters give a short phase accumulator, the 
+ * Lattice LSE syntethizer does not allow real paramters (at least not in this 
+ * example? Miswrites a float as integer in edf file).
  * ( parameter real CLKFRQ = 273000000.0,
  *   parameter real CENTER =  88511718.75,
  *   parameter real BAND   =     66650.4 )
@@ -35,21 +46,21 @@ module top #
     BAND    =     75000 
     )
    (
-    input        dummy, // Is 1. I attach these to logic I want to keep. Actually CAP_BTN1
+    input        dummy, // Is 1. To avoid optimizations. (Is really CAP_BTN1).
     input        CLK_I, // For slow work. Nominally 3.3 MHz
     output [3:0] led    // See at end of module.
     );
    wire          onlyinc = TIMING; // For timing of the freerunning clk
    wire          clk; //              Fast clock
-   wire          msb; //              Msb of phase accumulator used as a 1-bit DAC.
+   wire          msb; //              Msb of phase acc. used as a 1-bit DAC.
    reg           buffermsb; //        Buffered msb of phase accumulator
-   reg [18:0]    cnt;     //          Determines when to shift, and when to modulate.
+   reg [18:0]    cnt;     //          Determines when to shift, and modulate.
    reg           doshift; //          Time to shift the message
    //reg [29:0]  message; // Holds "SMS"
    reg [118:0]   message; // Holds "HELLO WORLD"
    reg           running; //          Ease init of message
    reg [31:0]    addend; //           Input for the phase accumulator
-   reg           meta_active, meta_highband, active, highband; // Cross clock domains.
+   reg           meta_active, meta_highband, active, highband; // Across clocks.
 
    /* 
     * 3.3 MHZ clock domain 
@@ -103,7 +114,8 @@ module top #
    localparam [31:0] THELOW    = fTHELOW;
    
    always @(posedge clk)
-     addend <= active ? (highband ? THEHIGH : THELOW) : (onlyinc ? 1 : THECENTER);
+     addend <= active ? (highband ? THEHIGH : THELOW) : 
+               (onlyinc ? 1 : THECENTER);
    
    m_phaseaccumulator i_acc(.msb(msb), .clk(clk), .addend(addend[31:0]));
    
@@ -204,7 +216,7 @@ module m_freeclock
    SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap5( .O(fastclk), .I3(dummy), .I2(tap4),    .I1(1'b0), .I0(1'b0));
    
 //   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap5( .O(tap5),    .I3(dummy), .I2(tap4),    .I1(1'b0), .I0(1'b0));
-//   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap6( .O(fastclk), .I3(dummy), .I2(tap5),    .I1(1'b0), .I0(1'b0));   
+//   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap6( .O(fastclk), .I3(dummy), .I2(tap5),    .I1(1'b0), .I0(1'b0));
 //   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap6( .O(tap6),    .I3(dummy), .I2(tap5),    .I1(1'b0), .I0(1'b0));
 //   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap7( .O(fastclk), .I3(dummy), .I2(tap6),    .I1(1'b0), .I0(1'b0));
    SB_GB gbbuf( .USER_SIGNAL_TO_GLOBAL_BUFFER(fastclk), .GLOBAL_BUFFER_OUTPUT(clk));
