@@ -6,7 +6,7 @@
  * This implementation inspired by https://github.com/r4d10n/iCEstick-hacks, 
  * that breaks timing constraints, and also requires a PLL.
  * 
- * Copyright B. Nossum. See LICENCE.txt for licence.
+ * Copyright B. Nossum. See LICENCE for licence.
  * 
  * User guide:
  * -----------
@@ -169,7 +169,8 @@ module m_phaseaccumulator
    assign msb = acc[31];   
 endmodule
 
-/*
+/* m_freeclock
+ * -----------
  * A 6-element ring supplies the clock. I use the under-communicated 
  * LUT chain cascade here.
  * 
@@ -188,8 +189,8 @@ endmodule
  * Note to self: 
  * Global clock netwirks are specified to work to up to 275 MHz.
  * Pulsewidth for the global buffer is specified at 0.88 ns, which
- * should imply that the highest clock that can pass the buffer
- * (but not drive the whole network) should be 1/(2*0.88 ns) = 568 MHz.
+ * cpi;d imply that the highest clock that can pass the buffer
+ * (but not drive the whole network) can be 1/(2*0.88 ns) = 568 MHz.
  * I will be nice, and uses 6 taps. On my board this give a 274 MHz clock,
  * but this will vary according to temperature, voltage, and die.
  * 
