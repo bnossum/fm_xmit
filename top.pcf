@@ -1,0 +1,42 @@
+# ##############################################################################
+# Modified from:
+# iCEcube PCF
+# Version:            2017.08.27940
+# File Generated:     Sep 22 2019 01:54:06
+# Family & Device:    iCE40HX1K
+# Package:            VQ100
+# ##############################################################################
+
+###PhyInst List 1
+set_location gbbuf 13 8
+
+###BLE List 6
+ble_pack T_12_8_logic_cluster_lc_0 {instclk.cmb_tap0} -no_pin_permute
+ble_pack T_12_8_logic_cluster_lc_1 {instclk.cmb_tap1} -no_pin_permute
+ble_pack T_12_8_logic_cluster_lc_2 {instclk.cmb_tap2} -no_pin_permute
+ble_pack T_12_8_logic_cluster_lc_3 {instclk.cmb_tap3} -no_pin_permute
+ble_pack T_12_8_logic_cluster_lc_4 {instclk.cmb_tap4} -no_pin_permute
+ble_pack T_12_8_logic_cluster_lc_5 {instclk.cmb_tap5} -no_pin_permute
+
+###CLB List 1
+clb_pack T_12_8 {T_12_8_logic_cluster_lc_0,T_12_8_logic_cluster_lc_1,T_12_8_logic_cluster_lc_2,T_12_8_logic_cluster_lc_3,T_12_8_logic_cluster_lc_4,T_12_8_logic_cluster_lc_5,,}
+set_location T_12_8 12 8
+
+###MergeFF List 1
+set_io_ff led[2] -out ON
+
+###IOSet List 6
+set_io CLK_I 13 -io_std SB_LVCMOS -pullup no
+set_io dummy 60 -io_std SB_LVCMOS -pullup no
+set_io led[0] 59 -io_std SB_LVCMOS -pullup no
+set_io led[1] 56 -io_std SB_LVCMOS -pullup no
+set_io led[2] 53 -io_std SB_LVCMOS -pullup no
+set_io led[3] 51 -io_std SB_LVCMOS -pullup no
+
+###Cascading List 5
+set_cascading instclk.cmb_tap0
+set_cascading instclk.cmb_tap1
+set_cascading instclk.cmb_tap2
+set_cascading instclk.cmb_tap3
+set_cascading instclk.cmb_tap4
+
