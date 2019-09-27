@@ -32,7 +32,7 @@
  *    perhaps your tool has inserted a global buffer?
  * 3. Select the FM center frequency (CENTER).
  * 4. Compile with ICECube2, upload to board, select board main clock at
- *    3.33 MHz (JP2 open).
+ *    0.33 MHz.
  * 4. Tune in your radio at approximately CENTER, and you should hear the 
  *    message in morse.
  */
