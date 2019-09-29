@@ -14,15 +14,18 @@ ble_pack T_12_8_lc_0 {instclk.cmb_tap0} -no_pin_permute
 ble_pack T_12_8_lc_1 {instclk.cmb_tap1} -no_pin_permute
 ble_pack T_12_8_lc_2 {instclk.cmb_tap2} -no_pin_permute
 ble_pack T_12_8_lc_3 {instclk.cmb_tap3} -no_pin_permute
-clb_pack T_12_8 {T_12_8_lc_0,T_12_8_lc_1,T_12_8_lc_2,T_12_8_lc_3,,,,}
+ble_pack T_12_8_lc_4 {instclk.cmb_tap4} -no_pin_permute
+ble_pack T_12_8_lc_5 {instclk.cmb_tap5} -no_pin_permute
+ble_pack T_12_8_lc_6 {instclk.cmb_tap6} -no_pin_permute
+ble_pack T_12_8_lc_7 {instclk.cmb_tap7} -no_pin_permute
+clb_pack T_12_8 {T_12_8_lc_0,T_12_8_lc_1,T_12_8_lc_2,T_12_8_lc_3,T_12_8_lc_4,T_12_8_lc_5,T_12_8_lc_6,T_12_8_lc_7}
 set_location T_12_8 12 8
 
 #
 # Place buffered msb of phase accumulator
 #
 ble_pack T_12_13_lc_0 {r_buffermsb}
-ble_pack T_12_13_lc_1 {r_buffermsb2}
-clb_pack T_12_13 {T_12_13_lc_0,T_12_13_lc_1}
+clb_pack T_12_13 {T_12_13_lc_0}
 set_location T_12_13 12 13
 
 #
@@ -39,8 +42,8 @@ set_io antennae 66 -io_std SB_LVCMOS -pullup no
 #
 # Cascading List
 #
-set_cascading instclk.cmb_tap0
-set_cascading instclk.cmb_tap1
-set_cascading instclk.cmb_tap2
-set_cascading instclk.cmb_tap3
+# set_cascading instclk.cmb_tap0
+# set_cascading instclk.cmb_tap1
+# set_cascading instclk.cmb_tap2
+# set_cascading instclk.cmb_tap3
 

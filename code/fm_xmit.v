@@ -15,8 +15,9 @@
  * difference from the CENTER frequency give the volume.
  * 
  * What is the use of this project?
- * Next to none. However, it demonstrates that we can implement a freerunning
- * clock at 409 MHz, and it shows that we can get FM out of iceblink40hx1k using 
+ * Next to none. There is high noise, and we emit over the whole FM band.
+ * 
+ * However, it demonstrates that we can get FM out of iceblink40hx1k using 
  * few resources. It may possibly be used as a debugging aid for designs where 
  * no wired interface is available. 
  * 
@@ -26,10 +27,7 @@
  *    off. See placement file top.pcf.
  * 2. Check the frequency of your freerunning clock on your iceblink40hx1k 
  *    board. Set parameter TIMING to 1. After programming the card, observe 
- *    led2. It will stay on for around 14s. 13.9 s, so apperantly 
- *    CLKFRQ ~= 2^32/13.9 = 309 MHz. If your observation is widely off this 
- *    value, examine placement of the instance of m_freeclock. Also, 
- *    perhaps your tool has inserted a global buffer?
+ *    led2. It led2 is on for t seconds, the CLKFRQ ~= 2^32/t Hz. 
  * 3. Select the FM center frequency (CENTER).
  * 4. Compile with ICECube2, upload to board, select board main clock at
  *    0.33 MHz.
@@ -39,15 +37,13 @@
 module top #
   ( parameter
     TIMING = 0,          // Set to 1 for calibration
-    CLKFRQ  = 409000000, // Hz
-    CENTER  =  91000000  // Hz
-//  CENTER  =  87000000  // Hz min on my Tivoli Audio
-//  CENTER  = 108500000  // Hz max on my Tivoli Audio
+    CLKFRQ  = 226000000, // Hz
+    CENTER  =  92000000  
     )
    (
     input        dummy, //     Is 1. To avoid optimizations. (Is really CAP_BTN1).
     input        CLK_I, //     For slow work. Nominally 0.33 MHz
-    output       antennae, //  The output
+    output       antennae, //  Output
     output [3:0] led    //     Diagnostics. See at end of module.
     );
    wire          clk; //       Fast clock. Do not load.
@@ -147,7 +143,6 @@ module top #
    endgenerate
    
    SB_DFF r_buffermsb( .Q(buffermsb), .C(clk), .D(msb)); 
-
    assign antennae = buffermsb;   
    assign led[3]   = msg;
    assign led[2]   = 1'b0;
@@ -214,47 +209,59 @@ endmodule
  * at a 13 bit accumulator to represent sidebands in a correct way.
  */
 module m_phaseaccumulator #
-  ( parameter HIGHLEVEL = 0
+  ( parameter HIGHLEVEL = 1
     )
    (
     input        clk,
     input [12:0] addend,
     output       msb
     );
+   reg [12:0]    acc;
+   reg           cy;
+   always @(posedge clk) begin
+      {cy,acc[6:0]} <= acc[ 6:0] + addend[ 6:0];
+      acc[12:7]     <= acc[12:7] + addend[12:7] + cy;
+   end
    
-   generate
-      if ( HIGHLEVEL ) begin
-         // This gave 27 LUTs
-         reg [12:0]   acc;
-         reg          cy;
-         always @(posedge clk) begin
-            {cy,acc[4:0]} <= acc[4:0]  + addend[4:0];
-            acc[12:5]     <= acc[12:5] + addend[12:5] + cy;
-         end
-         assign msb = acc[12];
-      end else begin
-         // This give 14 LUTs
-         wire [5:0] cmblowacc,lowacc;
-         wire [6:0] lowcy;
-         wire       cmbcy,cy;
-         assign lowcy[0] = 1'b0;
-         SB_LUT4 #(.LUT_INIT(16'hc33c)) cmb_lowsix [5:0] ( .O(cmblowacc), .I3(lowcy[5:0]), .I2(lowacc), .I1(addend[5:0]), .I0(1'b0));
-         SB_CARRY cmb_lowfivecarry [5:0]               ( .CO(lowcy[6:1]), .CI(lowcy[5:0]), .I1(lowacc), .I0(addend[5:0]));
-         SB_DFF reg_lowsix [5:0] ( .Q(lowacc), .C(clk), .D(cmblowacc) );
-         SB_LUT4 #(.LUT_INIT(16'hff00)) cylut( .O(cmbcy), .I3(lowcy[6]), .I2(1'b0), .I1(1'b0), .I0(1'b0));
-         SB_DFF reg_cy ( .Q(cy), .C(clk), .D(cmbcy) );
-         
-         wire [6:0] highaddend = {addend[12:7],cy};
-         wire [6:0] cmbhighacc,highacc;
-         wire [6:0] highcy;
-         assign highcy[0] = addend[6]; // Is a constant
-         SB_LUT4 #(.LUT_INIT(16'hc33c)) cmb_high_seven [6:0] ( .O(cmbhighacc),  .I3(highcy),      .I2(highacc),      .I1(highaddend), .I0(1'b0));
-         SB_CARRY cmb_high_six_carry [5:0] (                  .CO(highcy[6:1]), .CI(highcy[5:0]), .I1(highacc[5:0]), .I0(highaddend[5:0]));
-         SB_DFF reg_high_seven [6:0] ( .Q(highacc), .C(clk), .D(cmbhighacc));
-         assign msb = highacc[6];
-      end
-   endgenerate
+//   Reaches only 46 MHz???   
+//   always @(posedge clk) 
+//     acc <= acc + addend;
+   assign msb = acc[12];
 endmodule
+
+//   generate
+//      if ( HIGHLEVEL ) begin
+//         // This gave 27 LUTs
+//         reg [12:0]   acc;
+//         reg          cy;
+//         always @(posedge clk) begin
+//            {cy,acc[4:0]} <= acc[4:0]  + addend[4:0];
+//            acc[12:5]     <= acc[12:5] + addend[12:5] + cy;
+//         end
+//         assign msb = acc[12];
+//      end else begin
+//         // This give 14 LUTs
+//         wire [5:0] cmblowacc,lowacc;
+//         wire [6:0] lowcy;
+//         wire       cmbcy,cy;
+//         assign lowcy[0] = 1'b0;
+//         SB_LUT4 #(.LUT_INIT(16'hc33c)) cmb_lowsix [5:0] ( .O(cmblowacc), .I3(lowcy[5:0]), .I2(lowacc), .I1(addend[5:0]), .I0(1'b0));
+//         SB_CARRY cmb_lowfivecarry [5:0]               ( .CO(lowcy[6:1]), .CI(lowcy[5:0]), .I1(lowacc), .I0(addend[5:0]));
+//         SB_DFF reg_lowsix [5:0] ( .Q(lowacc), .C(clk), .D(cmblowacc) );
+//         SB_LUT4 #(.LUT_INIT(16'hff00)) cylut( .O(cmbcy), .I3(lowcy[6]), .I2(1'b0), .I1(1'b0), .I0(1'b0));
+//         SB_DFF reg_cy ( .Q(cy), .C(clk), .D(cmbcy) );
+//         
+//         wire [6:0] highaddend = {addend[12:7],cy};
+//         wire [6:0] cmbhighacc,highacc;
+//         wire [6:0] highcy;
+//         assign highcy[0] = addend[6]; // Is a constant
+//         SB_LUT4 #(.LUT_INIT(16'hc33c)) cmb_high_seven [6:0] ( .O(cmbhighacc),  .I3(highcy),      .I2(highacc),      .I1(highaddend), .I0(1'b0));
+//         SB_CARRY cmb_high_six_carry [5:0] (                  .CO(highcy[6:1]), .CI(highcy[5:0]), .I1(highacc[5:0]), .I0(highaddend[5:0]));
+//         SB_DFF reg_high_seven [6:0] ( .Q(highacc), .C(clk), .D(cmbhighacc));
+//         assign msb = highacc[6];
+//      end
+//   endgenerate
+//endmodule
 
 
 
@@ -263,17 +270,21 @@ endmodule
  * A 3-element ring supplies the clock. I use the under-communicated 
  * LUT chain cascade here, see top.pcf
  * 
- * +--|>--|>--|>o-+-- clk
+ * +--|>o-|>--|>--+-- clk
  * |              |
  * +--------------+
  * 
  * Notes to self: 
- * 8 taps: 229 MHz
- * 7 taps: 253 MHz
- * 6 taps: 274 MHz
- * 5 taps: 309 MHz
- * 4 taps: 358 MHz
- * 3 taps: 409 MHz
+ * Frq = 2^33/t
+ *         t   MHz
+ * 1 tap    7 614
+ * 2 taps   9 477
+ * 3 taps: 11 390      
+ * 4 taps: 12 358     
+ * 5 taps: 14 307 
+ * 6 taps: 16 268
+ * 7 taps: 17 253
+ * 8 taps: 19 226
  *
  * Global clock networks are specified to work to up to 275 MHz.
  * Pulsewidth for the global buffer is specified at 0.88 ns, which
@@ -287,10 +298,24 @@ module m_freeclock
    );
    wire      tap0;
    wire      tap1;
+   wire      tap2;
+   wire      tap3;
+   wire      tap4;
+   wire      tap5;
+   wire      tap6;
+  
+//   wire      fclk;
+//   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap0(.O(fclk),.I3(dummy),.I2(fclk),.I1(1'b0),.I0(1'b0));
+//   SB_DFF div2( .Q(clk), .C(fclk), .D(~clk));
    
-   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap0(.O(tap0),.I3(dummy),.I2(clk), .I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap0(.O(tap0),.I3(dummy),.I2(clk), .I1(1'b0),.I0(1'b0));
    SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap1(.O(tap1),.I3(dummy),.I2(tap0),.I1(1'b0),.I0(1'b0));
-   SB_LUT4 #(.LUT_INIT(16'h0f00)) cmb_tap2(.O(clk), .I3(dummy),.I2(tap1),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap2(.O(tap2),.I3(dummy),.I2(tap1),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap3(.O(tap3),.I3(dummy),.I2(tap2),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap4(.O(tap4),.I3(dummy),.I2(tap3),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap5(.O(tap5),.I3(dummy),.I2(tap4),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap6(.O(tap6),.I3(dummy),.I2(tap5),.I1(1'b0),.I0(1'b0));
+   SB_LUT4 #(.LUT_INIT(16'hf000)) cmb_tap7(.O(clk), .I3(dummy),.I2(tap6),.I1(1'b0),.I0(1'b0));
 endmodule
 
 
